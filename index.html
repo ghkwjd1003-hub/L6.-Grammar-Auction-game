@@ -1,0 +1,1515 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>영문법 경매 게임 - Grammar Auction</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts (Jua / Noto Sans KR) -->
+    <link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <!-- Canvas Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'jua': ['Jua', 'sans-serif'],
+                        'sans': ['Noto Sans KR', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #f8fafc;
+            color: #0f172a;
+            min-height: 100vh;
+        }
+        .font-jua {
+            font-family: 'Jua', sans-serif;
+        }
+        .clean-card {
+            background: #ffffff;
+            border: 2px solid #e2e8f0;
+            border-radius: 1.25rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+        }
+        .pop-btn {
+            transition: all 0.15s ease-in-out;
+            box-shadow: 0 3px 0 0 rgba(0,0,0,0.12);
+        }
+        .pop-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 0 0 rgba(0,0,0,0.12);
+        }
+        .pop-btn:active {
+            transform: translateY(1px);
+            box-shadow: 0 1px 0 0 rgba(0,0,0,0.12);
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 8px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 8px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between selection:bg-indigo-100 selection:text-indigo-900">
+
+    <!-- Top Navigation Bar (Clean Solid Theme) -->
+    <header class="bg-indigo-600 text-white shadow-md sticky top-0 z-40 px-4 py-3 border-b-2 border-indigo-700">
+        <div class="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-3">
+            <div class="flex items-center gap-3 cursor-pointer" onclick="switchView('main')">
+                <div class="w-10 h-10 rounded-xl bg-amber-400 text-indigo-950 font-black flex items-center justify-center shadow">
+                    <i class="fa-solid fa-gavel text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-jua tracking-wide text-white">영문법 경매 (Grammar Auction)</h1>
+                    <p class="text-xs text-indigo-100 font-medium">✨ 깔끔한 중1 맞춤형 문법 경매 게임</p>
+                </div>
+            </div>
+
+            <!-- Global Status & QR Code Button -->
+            <div class="flex items-center gap-3">
+                <div class="flex items-center gap-2 text-xs bg-indigo-700 px-3 py-1.5 rounded-lg border border-indigo-500 text-indigo-100 font-bold">
+                    <span id="sync-status-dot" class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+                    <span id="global-status-text">클라우드 연결됨</span>
+                </div>
+                <button onclick="openStudentQRModal()" class="px-3.5 py-1.5 bg-amber-400 hover:bg-amber-300 text-indigo-950 rounded-lg text-xs font-jua font-bold transition flex items-center gap-1.5 pop-btn">
+                    <i class="fa-solid fa-qrcode"></i> 학생 QR
+                </button>
+            </div>
+
+            <!-- View Switching Tabs -->
+            <div class="flex items-center bg-indigo-800 p-1 rounded-xl border border-indigo-500">
+                <button onclick="switchView('main')" id="tab-btn-main" class="px-3.5 py-1.5 rounded-lg text-xs font-jua transition flex items-center gap-1.5 bg-white text-indigo-950 font-bold shadow-sm">
+                    <i class="fa-solid fa-tv"></i> 전자칠판용 (메인)
+                </button>
+                <button onclick="switchView('student')" id="tab-btn-student" class="px-3.5 py-1.5 rounded-lg text-xs font-jua transition flex items-center gap-1.5 text-indigo-100 hover:text-white">
+                    <i class="fa-solid fa-mobile-screen-button"></i> 학생용 (모둠)
+                </button>
+                <button onclick="openTeacherAuthModal()" id="tab-btn-teacher" class="px-3.5 py-1.5 rounded-lg text-xs font-jua transition flex items-center gap-1.5 text-indigo-100 hover:text-white">
+                    <i class="fa-solid fa-user-gear"></i> 교사 대시보드
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 space-y-6">
+
+        <!-- VIEW 1: 전자칠판 / 대형 화면 (Main Display View) -->
+        <section id="view-main" class="space-y-6">
+            
+            <!-- Student Quick Access Bar -->
+            <div class="bg-indigo-50 rounded-2xl p-4 border-2 border-indigo-200 flex flex-wrap justify-between items-center gap-3">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold text-xl">
+                        <i class="fa-solid fa-mobile-screen"></i>
+                    </div>
+                    <div>
+                        <div class="font-jua text-indigo-950 text-base">📲 학생 태블릿/스마트폰 접속</div>
+                        <div class="text-xs font-semibold text-slate-600">접속 후 상단 <span class="bg-indigo-200 px-1.5 py-0.5 rounded text-indigo-900 font-bold">[학생용 (모둠)]</span>에서 자기 모둠을 선택하세요.</div>
+                    </div>
+                </div>
+                <button onclick="openStudentQRModal()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-jua font-bold rounded-xl transition text-xs flex items-center gap-2 pop-btn">
+                    <i class="fa-solid fa-qrcode"></i> QR코드 확대
+                </button>
+            </div>
+
+            <!-- Teacher Quick Control Bar for Electronic Blackboard -->
+            <div class="bg-indigo-950 text-white p-4 rounded-3xl border-2 border-indigo-800 shadow-md flex flex-wrap items-center justify-between gap-3">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-9 h-9 rounded-xl bg-amber-400 text-indigo-950 flex items-center justify-center font-bold shadow">
+                        <i class="fa-solid fa-gamepad text-base"></i>
+                    </div>
+                    <div>
+                        <div class="font-jua text-amber-300 text-base leading-none">교사 메인 제어판</div>
+                        <div class="text-[11px] text-indigo-200 font-medium">전자칠판에서 탭 이동 없이 경매를 신속 진행하세요.</div>
+                    </div>
+                </div>
+                <div class="flex flex-wrap items-center gap-2">
+                    <button onclick="teacherStartAuction()" id="main-ctrl-start" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-jua text-sm font-bold rounded-xl shadow transition flex items-center gap-1.5 pop-btn">
+                        <i class="fa-solid fa-play"></i> 1. 경매 시작
+                    </button>
+                    <button onclick="teacherCloseBidding()" id="main-ctrl-close" class="px-4 py-2 bg-amber-400 hover:bg-amber-300 text-indigo-950 font-jua text-sm font-bold rounded-xl shadow transition flex items-center gap-1.5 pop-btn">
+                        <i class="fa-solid fa-gavel"></i> 2. 입찰 마감
+                    </button>
+                    <button onclick="teacherJudgeSentence()" id="main-ctrl-judge" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-jua text-sm font-bold rounded-xl shadow transition flex items-center gap-1.5 pop-btn">
+                        <i class="fa-solid fa-clipboard-check"></i> 3. 정답 판정
+                    </button>
+                    <button onclick="teacherNextSentence()" id="main-ctrl-next" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white font-jua text-sm font-bold rounded-xl shadow transition flex items-center gap-1.5 pop-btn">
+                        <i class="fa-solid fa-forward"></i> 4. 다음 문장
+                    </button>
+                </div>
+            </div>
+
+            <!-- Top Auction Banner & Info -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Current Sentence Card -->
+                <div class="lg:col-span-2 bg-white border-2 border-slate-200 rounded-3xl p-6 shadow-sm flex flex-col justify-between min-h-[290px]">
+                    <div class="flex justify-between items-center gap-4 border-b border-slate-100 pb-3">
+                        <span id="disp-sentence-badge" class="px-3.5 py-1 bg-indigo-100 text-indigo-800 rounded-full text-xs font-jua font-bold">
+                            ROUND <span id="disp-current-round">1</span>
+                        </span>
+                        
+                        <!-- Hidden Value Indicator (Revealed only after auction) -->
+                        <div class="flex items-center gap-2 bg-slate-100 px-4 py-1.5 rounded-full border border-slate-300">
+                            <span class="text-xs font-bold text-slate-600">문장 가치:</span>
+                            <span id="disp-sentence-value" class="text-xl font-jua text-slate-800 font-black">🔒 $???</span>
+                        </div>
+                    </div>
+
+                    <div class="my-6 text-center">
+                        <div class="inline-block px-3 py-1 bg-amber-100 text-amber-900 font-bold rounded-lg text-xs mb-3 border border-amber-200">
+                            🤔 이 영문장은 맞을까요? 틀릴까요?
+                        </div>
+                        <h2 id="disp-sentence-text" class="text-2xl sm:text-3xl font-extrabold text-slate-800 tracking-wide leading-relaxed font-sans">
+                            "경매 시작 버튼을 눌러 게임을 개시하세요."
+                        </h2>
+                    </div>
+
+                    <!-- Auction Status & Highest Bidder -->
+                    <div class="flex flex-wrap items-center justify-between border-t border-slate-100 pt-4 gap-2">
+                        <div class="flex items-center gap-2">
+                            <span class="text-slate-500 font-bold text-xs">경매 상태:</span>
+                            <span id="disp-auction-status-badge" class="px-3 py-1 rounded-lg text-xs font-jua font-bold bg-slate-200 text-slate-700">
+                                대기 중
+                            </span>
+                        </div>
+
+                        <!-- Highest Bid Card -->
+                        <div class="flex items-center gap-3 bg-emerald-50 border-2 border-emerald-300 text-emerald-950 px-4 py-2 rounded-2xl shadow-sm">
+                            <i class="fa-solid fa-crown text-amber-500 text-xl"></i>
+                            <div>
+                                <div class="text-[10px] font-extrabold text-emerald-800 uppercase">현재 최고 낙찰가</div>
+                                <div class="text-lg font-jua text-emerald-900">
+                                    <span id="disp-high-bidder">없음</span> : <span id="disp-high-bid-amount">$0</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Live Bidding History Panel -->
+                <div class="bg-white border-2 border-slate-200 rounded-3xl p-5 shadow-sm flex flex-col justify-between">
+                    <div class="flex items-center justify-between mb-3 border-b border-slate-100 pb-3">
+                        <h3 class="font-jua text-lg text-indigo-950 flex items-center gap-2">
+                            <i class="fa-solid fa-bolt text-amber-500"></i> 실시간 입찰 현황
+                        </h3>
+                    </div>
+
+                    <!-- Bidding History Log -->
+                    <div id="disp-bid-history" class="space-y-2 overflow-y-auto max-h-[180px] pr-1 flex-1 text-sm">
+                        <div class="text-center text-slate-400 py-8 text-xs font-semibold">입찰 기록이 없습니다.</div>
+                    </div>
+
+                    <!-- Interactive Judgment Action Panel for Teacher -->
+                    <div id="disp-judge-action-panel" class="mt-3 p-3 bg-indigo-50 rounded-2xl border-2 border-indigo-200 shadow-sm hidden space-y-2 text-center">
+                        <div id="disp-judge-title" class="font-jua text-sm text-indigo-950 font-bold"></div>
+                        <div id="disp-judge-buttons" class="flex flex-wrap gap-2 justify-center pt-1">
+                            <!-- Injected by JS -->
+                        </div>
+                    </div>
+
+                    <!-- Answer Reveal & Result Panel (Shown ONLY after judgment completion) -->
+                    <div id="disp-result-panel" class="mt-3 p-3 bg-slate-50 rounded-2xl border-2 border-indigo-200 shadow-sm hidden space-y-1">
+                        <div id="disp-result-correctness" class="font-jua text-sm text-indigo-950 font-bold"></div>
+                        <p id="disp-result-answer" class="text-xs text-slate-700 font-bold bg-white p-2 rounded-lg border border-slate-200"></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4 Teams Scoreboard Grid -->
+            <div>
+                <h3 class="font-jua text-2xl text-slate-800 mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-trophy text-amber-500"></i> 모둠별 보유 금액 & 순위 (배팅 계산 자동반영)
+                </h3>
+
+                <div id="disp-teams-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <!-- Teams injected by JS -->
+                </div>
+            </div>
+        </section>
+
+        <!-- VIEW 2: 학생용 접속 및 입찰 화면 (Student View) -->
+        <section id="view-student" class="hidden space-y-6 max-w-2xl mx-auto">
+            
+            <!-- Step 1: Select / Unlock Team -->
+            <div id="student-auth-container" class="bg-white border-2 border-slate-200 rounded-3xl p-6 shadow-sm space-y-6">
+                <div class="text-center">
+                    <div class="w-14 h-14 rounded-2xl bg-indigo-600 text-white text-2xl font-black flex items-center justify-center mx-auto mb-3 shadow">
+                        <i class="fa-solid fa-users"></i>
+                    </div>
+                    <h2 class="text-2xl font-jua text-slate-800">우리 모둠 선택하기</h2>
+                    <p class="text-xs text-slate-500 mt-1 font-semibold">참여할 모둠을 선택하고 암호를 입력하세요.</p>
+                </div>
+
+                <!-- Team Select Cards -->
+                <div class="grid grid-cols-2 gap-3">
+                    <button type="button" onclick="selectStudentTeam(1)" id="team-select-btn-1" class="team-sel-btn border-2 border-slate-200 hover:border-indigo-400 bg-slate-50 p-4 rounded-2xl text-center transition pop-btn">
+                        <div class="text-[10px] font-bold text-slate-400">GROUP 1</div>
+                        <div class="font-jua text-xl text-indigo-600">1모둠</div>
+                        <div id="team-status-tag-1" class="text-[10px] font-bold text-slate-400 mt-1">비밀번호 미설정</div>
+                    </button>
+                    <button type="button" onclick="selectStudentTeam(2)" id="team-select-btn-2" class="team-sel-btn border-2 border-slate-200 hover:border-indigo-400 bg-slate-50 p-4 rounded-2xl text-center transition pop-btn">
+                        <div class="text-[10px] font-bold text-slate-400">GROUP 2</div>
+                        <div class="font-jua text-xl text-sky-600">2모둠</div>
+                        <div id="team-status-tag-2" class="text-[10px] font-bold text-slate-400 mt-1">비밀번호 미설정</div>
+                    </button>
+                    <button type="button" onclick="selectStudentTeam(3)" id="team-select-btn-3" class="team-sel-btn border-2 border-slate-200 hover:border-indigo-400 bg-slate-50 p-4 rounded-2xl text-center transition pop-btn">
+                        <div class="text-[10px] font-bold text-slate-400">GROUP 3</div>
+                        <div class="font-jua text-xl text-purple-600">3모둠</div>
+                        <div id="team-status-tag-3" class="text-[10px] font-bold text-slate-400 mt-1">비밀번호 미설정</div>
+                    </button>
+                    <button type="button" onclick="selectStudentTeam(4)" id="team-select-btn-4" class="team-sel-btn border-2 border-slate-200 hover:border-indigo-400 bg-slate-50 p-4 rounded-2xl text-center transition pop-btn">
+                        <div class="text-[10px] font-bold text-slate-400">GROUP 4</div>
+                        <div class="font-jua text-xl text-amber-600">4모둠</div>
+                        <div id="team-status-tag-4" class="text-[10px] font-bold text-slate-400 mt-1">비밀번호 미설정</div>
+                    </button>
+                </div>
+
+                <!-- PIN Entry Form -->
+                <div id="student-pin-form" class="space-y-4 pt-4 border-t border-slate-100 hidden">
+                    <label class="block text-xs font-bold text-slate-600 text-center">
+                        🔑 <span id="selected-team-title" class="text-indigo-600 font-extrabold">1모둠</span> 비밀번호 입력
+                    </label>
+                    <div class="flex gap-2">
+                        <input type="password" id="student-pin-input" maxlength="6" placeholder="4~6자리 암호" onkeydown="if(event.key === 'Enter') { event.preventDefault(); loginStudentTeam(); }" class="flex-1 bg-slate-50 border-2 border-slate-300 rounded-xl px-4 py-3 text-center text-lg font-mono tracking-widest text-slate-800 focus:outline-none focus:border-indigo-500">
+                        <button type="button" onclick="loginStudentTeam()" class="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition font-jua pop-btn">
+                            접속
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 2: Student Interactive Bidding Panel -->
+            <div id="student-active-panel" class="hidden space-y-5">
+                
+                <!-- My Team Header Card -->
+                <div class="bg-indigo-600 text-white border-2 border-indigo-700 rounded-3xl p-5 flex items-center justify-between shadow-sm">
+                    <div class="flex items-center gap-3">
+                        <div id="stu-my-team-badge" class="w-12 h-12 rounded-2xl bg-amber-400 text-indigo-950 font-jua text-2xl flex items-center justify-center font-bold shadow">
+                            1
+                        </div>
+                        <div>
+                            <div id="stu-my-team-name" class="font-jua text-2xl text-white">1모둠 접속중</div>
+                            <button onclick="logoutStudentTeam()" class="text-xs text-indigo-200 underline hover:text-white font-semibold">다른 모둠으로 변경</button>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-xs font-bold text-indigo-200">우리 모둠 보유금액</div>
+                        <div id="stu-my-balance" class="text-3xl font-jua text-amber-300">$1,000</div>
+                    </div>
+                </div>
+
+                <!-- Current Sentence Display (Value is hidden with $???) -->
+                <div class="bg-white border-2 border-slate-200 rounded-3xl p-5 space-y-3 shadow-sm">
+                    <div class="flex justify-between items-center text-xs">
+                        <span class="text-indigo-800 font-extrabold bg-indigo-50 px-3 py-1 rounded-full border border-indigo-100">현재 경매 문장</span>
+                        <span class="font-bold text-slate-600 bg-slate-100 px-3 py-1 rounded-full border border-slate-200">가치: 🔒 $??? (낙찰 후 공개)</span>
+                    </div>
+                    <div id="stu-sentence-text" class="text-xl font-bold text-center text-slate-800 py-6 bg-slate-50 rounded-2xl border border-slate-200 font-sans">
+                        "선생님이 경매를 시작하길 기다리는 중입니다."
+                    </div>
+                </div>
+
+                <!-- Bidding Controls -->
+                <div id="stu-bid-controls" class="bg-white border-2 border-slate-200 rounded-3xl p-5 space-y-4 shadow-sm">
+                    <h3 class="font-jua text-xl text-slate-800 flex items-center gap-2">
+                        <i class="fa-solid fa-hand-holding-dollar text-emerald-600"></i> 배팅금액 입찰하기
+                    </h3>
+
+                    <!-- Quick Add Buttons -->
+                    <div class="grid grid-cols-3 gap-2">
+                        <button onclick="addBidOffset(50)" class="py-3 bg-slate-100 hover:bg-slate-200 rounded-xl text-sm font-bold text-slate-700 transition border border-slate-300 pop-btn">
+                            + $50
+                        </button>
+                        <button onclick="addBidOffset(100)" class="py-3 bg-slate-100 hover:bg-slate-200 rounded-xl text-sm font-bold text-slate-700 transition border border-slate-300 pop-btn">
+                            + $100
+                        </button>
+                        <button onclick="setBidToCurrentPlus(50)" class="py-3 bg-amber-400 hover:bg-amber-300 text-indigo-950 rounded-xl text-sm font-jua font-bold transition pop-btn">
+                            최고가 + $50
+                        </button>
+                    </div>
+
+                    <!-- Input and Submit Button -->
+                    <div class="flex gap-2">
+                        <div class="relative flex-1">
+                            <span class="absolute left-4 top-3 text-slate-400 font-bold">$</span>
+                            <input type="number" id="stu-bid-input" step="10" placeholder="입찰금액" onkeydown="if(event.key === 'Enter') { event.preventDefault(); submitStudentBid(); }" class="w-full bg-slate-50 border-2 border-slate-300 rounded-xl pl-8 pr-4 py-3 text-xl font-bold text-slate-800 focus:outline-none focus:border-indigo-500">
+                        </div>
+                        <button onclick="submitStudentBid()" id="stu-bid-submit-btn" class="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-jua text-xl font-bold rounded-xl shadow transition pop-btn">
+                            입찰하기
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Correction Box (For Winner or Steal Chance) -->
+                <div id="stu-correction-box" class="bg-purple-50 border-2 border-purple-300 rounded-3xl p-5 space-y-3 shadow-sm hidden">
+                    <div class="flex items-center gap-2 text-purple-900 font-jua text-xl">
+                        <i class="fa-solid fa-pen-to-square"></i> <span id="stu-correction-title">문장 고치기 기회!</span>
+                    </div>
+                    <p id="stu-correction-desc" class="text-xs text-slate-700 font-semibold leading-relaxed">
+                        낙찰받은 문장이 틀린 문장입니다! 올바른 문장으로 정답을 고쳐서 제출하세요.
+                    </p>
+                    <textarea id="stu-correction-input" rows="2" placeholder="올바른 전체 영문장을 입력하세요..." onkeydown="if(event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); submitSentenceCorrection(); }" class="w-full bg-white border-2 border-purple-200 rounded-xl p-3 text-sm text-slate-800 focus:outline-none focus:border-purple-500 font-sans font-bold"></textarea>
+                    <button onclick="submitSentenceCorrection()" class="w-full py-3 bg-purple-700 hover:bg-purple-800 font-jua text-white rounded-xl font-bold shadow transition pop-btn text-lg">
+                        수정 문장 제출하기
+                    </button>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- VIEW 3: 교사용 대시보드 (Teacher Dashboard) -->
+        <section id="view-teacher" class="hidden space-y-6">
+            <div class="bg-white border-2 border-slate-200 rounded-3xl p-6 shadow-sm space-y-6">
+                <div class="flex flex-wrap justify-between items-center gap-4 border-b border-slate-200 pb-4">
+                    <div>
+                        <h2 class="text-2xl font-jua text-slate-800 flex items-center gap-2">
+                            <i class="fa-solid fa-sliders text-indigo-600"></i> 교사 대시보드 & 게임 제어판
+                        </h2>
+                        <p class="text-xs text-slate-500 font-medium">경매 진행, 정답 판정, 문장 추가/수정 및 모둠별 보유금액 관리</p>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        <button onclick="resetGameData()" class="px-3.5 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold rounded-xl transition pop-btn">
+                            <i class="fa-solid fa-rotate-left"></i> 게임 초기화
+                        </button>
+                        <button onclick="loadSampleSentences()" class="px-3.5 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-800 border border-indigo-200 text-xs font-bold rounded-xl transition pop-btn">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i> 중1 샘플문장 로드
+                        </button>
+                        <input type="file" id="json-file-input" accept=".json" class="hidden" onchange="handleJsonFileUpload(event)">
+                        <button onclick="document.getElementById('json-file-input').click()" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition flex items-center gap-1.5 pop-btn">
+                            <i class="fa-solid fa-file-import"></i> JSON 불러오기
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Teacher Controller Panel -->
+                <div class="bg-indigo-50 p-5 rounded-2xl border-2 border-indigo-100 space-y-3">
+                    <h3 class="text-sm font-bold text-indigo-900 uppercase tracking-wider">🎯 경매 단계별 진행</h3>
+                    <div class="flex flex-wrap items-center gap-3">
+                        <button onclick="teacherStartAuction()" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-jua rounded-xl shadow transition flex items-center gap-2 pop-btn text-base">
+                            <i class="fa-solid fa-play"></i> 1. 경매 개시
+                        </button>
+                        <button onclick="teacherCloseBidding()" class="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-indigo-950 font-jua rounded-xl shadow transition flex items-center gap-2 pop-btn text-base">
+                            <i class="fa-solid fa-gavel"></i> 2. 입찰 마감 (최고가 낙찰 확정)
+                        </button>
+                        <button onclick="teacherJudgeSentence()" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-jua rounded-xl shadow transition flex items-center gap-2 pop-btn text-base">
+                            <i class="fa-solid fa-clipboard-check"></i> 3. 문장 판정 & 정산하기
+                        </button>
+                        <button onclick="teacherNextSentence()" class="px-5 py-2.5 bg-slate-700 hover:bg-slate-800 text-white font-jua rounded-xl shadow transition flex items-center gap-2 pop-btn text-base">
+                            <i class="fa-solid fa-forward"></i> 4. 다음 문장으로
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Sentence Management Form & List -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="bg-slate-50 p-5 rounded-2xl border-2 border-slate-200 space-y-3">
+                        <h3 class="font-jua text-lg text-slate-800">새 문장 등록</h3>
+                        <div class="space-y-3 text-xs">
+                            <div>
+                                <label class="block text-slate-600 font-bold mb-1">영문장</label>
+                                <input type="text" id="t-sent-text" placeholder="예: She don't like apples." onkeydown="if(event.key === 'Enter') { event.preventDefault(); addSentenceFromTeacher(); }" class="w-full bg-white border border-slate-300 rounded-lg p-2 text-sm text-slate-800 focus:outline-none focus:border-indigo-500">
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="block text-slate-600 font-bold mb-1">문장 올바름 여부</label>
+                                    <select id="t-sent-correct" class="w-full bg-white border border-slate-300 rounded-lg p-2 text-sm font-medium">
+                                        <option value="true">O (올바른 문장)</option>
+                                        <option value="false">X (틀린 문장)</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-slate-600 font-bold mb-1">문장 가치 ($)</label>
+                                    <input type="number" id="t-sent-value" value="300" step="50" min="50" class="w-full bg-white border border-slate-300 rounded-lg p-2 text-sm font-medium" placeholder="300">
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-slate-600 font-bold mb-1">올바른 정답 문장 (틀린 문장인 경우)</label>
+                                <input type="text" id="t-sent-answer" placeholder="예: She doesn't like apples." onkeydown="if(event.key === 'Enter') { event.preventDefault(); addSentenceFromTeacher(); }" class="w-full bg-white border border-slate-300 rounded-lg p-2 text-sm text-slate-800 focus:outline-none focus:border-indigo-500">
+                            </div>
+
+                            <div>
+                                <label class="block text-slate-600 font-bold mb-1">문법 해설</label>
+                                <input type="text" id="t-sent-explain" placeholder="예: 3인칭 단수 주어 뒤에는 doesn't 사용" onkeydown="if(event.key === 'Enter') { event.preventDefault(); addSentenceFromTeacher(); }" class="w-full bg-white border border-slate-300 rounded-lg p-2 text-sm text-slate-800 focus:outline-none focus:border-indigo-500">
+                            </div>
+
+                            <button onclick="addSentenceFromTeacher()" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-jua font-bold rounded-xl transition pop-btn text-sm">
+                                + 문장 추가하기
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Registered Sentences List -->
+                    <div class="lg:col-span-2 space-y-3">
+                        <h3 class="font-jua text-lg text-slate-800">등록된 문장 목록 (<span id="t-sentence-count">0</span>)</h3>
+                        <div id="t-sentence-list" class="space-y-2 max-h-[380px] overflow-y-auto pr-1">
+                            <!-- Injected by JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Teams Score & Password Reset -->
+                <div class="pt-4 border-t border-slate-200">
+                    <h3 class="font-jua text-lg text-slate-800 mb-3">모둠 수동 보유금 조정 & 비밀번호 관리</h3>
+                    <div id="t-teams-manage-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <!-- Injected by JS -->
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Student QR Modal -->
+    <div id="modal-student-qr" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white border-2 border-slate-200 rounded-3xl max-w-md w-full p-6 shadow-xl space-y-5 text-center">
+            <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                <h3 class="font-jua text-2xl text-slate-800 flex items-center gap-2">
+                    <i class="fa-solid fa-qrcode text-indigo-600"></i> 학생 접속 QR코드
+                </h3>
+                <button onclick="closeStudentQRModal()" class="text-slate-400 hover:text-slate-600 text-xl">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="p-4 bg-slate-50 rounded-2xl inline-block border border-slate-200 mx-auto">
+                <img id="qr-code-img" src="" alt="QR Code" class="w-56 h-56 mx-auto rounded-xl">
+            </div>
+
+            <div class="space-y-2">
+                <div class="bg-slate-100 p-2.5 rounded-xl border border-slate-200 flex items-center justify-between gap-2">
+                    <span id="student-url-display" class="text-xs font-mono text-slate-600 truncate font-semibold"></span>
+                    <button onclick="copyStudentUrl()" class="px-3 py-1 bg-indigo-600 text-white text-xs font-bold rounded-lg hover:bg-indigo-700 font-jua flex-shrink-0 pop-btn">
+                        링크 복사
+                    </button>
+                </div>
+            </div>
+
+            <button onclick="closeStudentQRModal()" class="w-full py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold rounded-xl transition text-sm font-jua">
+                닫기
+            </button>
+        </div>
+    </div>
+
+    <!-- Teacher Password Modal -->
+    <div id="modal-teacher-auth" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white border-2 border-slate-200 rounded-3xl max-w-sm w-full p-6 shadow-xl space-y-4">
+            <div class="text-center">
+                <div class="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center mx-auto mb-2 text-xl border border-indigo-200">
+                    <i class="fa-solid fa-lock"></i>
+                </div>
+                <h3 class="font-jua text-2xl text-slate-800">교사 인증</h3>
+                <p class="text-xs text-slate-500 mt-1 font-semibold">비밀번호를 입력하세요.</p>
+            </div>
+
+            <div>
+                <input type="password" id="teacher-pwd-input" placeholder="비밀번호 입력" onkeydown="if(event.key === 'Enter') { event.preventDefault(); verifyTeacherPassword(); }" class="w-full bg-slate-50 border-2 border-slate-300 rounded-xl px-4 py-3 text-center text-lg font-mono tracking-widest text-slate-800 focus:outline-none focus:border-indigo-500">
+            </div>
+
+            <div class="flex gap-2">
+                <button onclick="closeTeacherAuthModal()" class="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition text-sm">
+                    취소
+                </button>
+                <button onclick="verifyTeacherPassword()" class="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-jua font-bold rounded-xl shadow transition pop-btn">
+                    확인
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Sentence Modal -->
+    <div id="modal-edit-sentence" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white border-2 border-slate-200 rounded-3xl max-w-lg w-full p-6 shadow-xl space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                <h3 class="font-jua text-2xl text-slate-800 flex items-center gap-2">
+                    <i class="fa-solid fa-pen-to-square text-indigo-600"></i> 문장 수정하기
+                </h3>
+                <button onclick="closeEditSentenceModal()" class="text-slate-400 hover:text-slate-600 text-xl">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <input type="hidden" id="edit-sent-id">
+
+            <div class="space-y-3 text-xs">
+                <div>
+                    <label class="block text-slate-600 font-bold mb-1">영문장</label>
+                    <input type="text" id="edit-sent-text" onkeydown="if(event.key === 'Enter') { event.preventDefault(); saveEditedSentence(); }" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm text-slate-800 focus:outline-none focus:border-indigo-500">
+                </div>
+
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-slate-600 font-bold mb-1">문장 올바름 여부</label>
+                        <select id="edit-sent-correct" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm font-medium">
+                            <option value="true">O (올바른 문장)</option>
+                            <option value="false">X (틀린 문장)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-slate-600 font-bold mb-1">문장 가치 ($)</label>
+                        <input type="number" id="edit-sent-value" step="50" min="50" placeholder="300" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm font-medium text-slate-800 focus:outline-none focus:border-indigo-500">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-slate-600 font-bold mb-1">올바른 정답 문장 (틀린 문장인 경우)</label>
+                    <input type="text" id="edit-sent-answer" onkeydown="if(event.key === 'Enter') { event.preventDefault(); saveEditedSentence(); }" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm text-slate-800 focus:outline-none focus:border-indigo-500">
+                </div>
+
+                <div>
+                    <label class="block text-slate-600 font-bold mb-1">문법 해설</label>
+                    <input type="text" id="edit-sent-explain" onkeydown="if(event.key === 'Enter') { event.preventDefault(); saveEditedSentence(); }" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm text-slate-800 focus:outline-none focus:border-indigo-500">
+                </div>
+            </div>
+
+            <div class="flex gap-2 pt-2">
+                <button onclick="closeEditSentenceModal()" class="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition text-sm">
+                    취소
+                </button>
+                <button onclick="saveEditedSentence()" class="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-jua font-bold rounded-xl shadow transition pop-btn text-sm">
+                    수정 저장
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div id="toast-container" class="fixed bottom-5 right-5 z-50 space-y-2 pointer-events-none"></div>
+
+    <!-- Application Logic -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Initial Game State
+        const DEFAULT_STATE = {
+            currentRound: 0,
+            status: 'WAITING', // WAITING, BIDDING, CLOSED, JUDGING_WINNER, JUDGING_STEAL, COMPLETED
+            currentSentenceIndex: 0,
+            currentSentence: null,
+            highestBid: 0,
+            highestBidder: null,
+            bidHistory: [],
+            correctionSubmissions: {}, // { teamId: { text, time } }
+            lastResultMsg: null,
+            showAnswerExplanation: false, // Flag to show answer & explanation only when completed
+            teams: {
+                1: { name: "1모둠", balance: 1000, pin: null },
+                2: { name: "2모둠", balance: 1000, pin: null },
+                3: { name: "3모둠", balance: 1000, pin: null },
+                4: { name: "4모둠", balance: 1000, pin: null }
+            },
+            sentences: [
+                {
+                    id: 1,
+                    text: "She go to school by bus every day.",
+                    isCorrect: false,
+                    value: 300,
+                    correctAnswer: "She goes to school by bus every day.",
+                    explanation: "3인칭 단수 주어(She) 뒤의 동사 go는 goes로 고쳐야 합니다."
+                },
+                {
+                    id: 2,
+                    text: "They are playing soccer in the park now.",
+                    isCorrect: true,
+                    value: 500,
+                    correctAnswer: "They are playing soccer in the park now.",
+                    explanation: "현재진행형(be + v-ing)으로 문법적으로 올바른 문장입니다!"
+                },
+                {
+                    id: 3,
+                    text: "He doesn't likes watching scary movies.",
+                    isCorrect: false,
+                    value: 300,
+                    correctAnswer: "He doesn't like watching scary movies.",
+                    explanation: "조동사 doesn't 뒤에는 동사원형(like)을 사용해야 합니다."
+                },
+                {
+                    id: 4,
+                    text: "I met my best friend yesterday.",
+                    isCorrect: true,
+                    value: 400,
+                    correctAnswer: "I met my best friend yesterday.",
+                    explanation: "과거 신호어(yesterday)와 과거동사(met)가 올바르게 사용되었습니다."
+                },
+                {
+                    id: 5,
+                    text: "There is many books on the table.",
+                    isCorrect: false,
+                    value: 500,
+                    correctAnswer: "There are many books on the table.",
+                    explanation: "복수 명사(books) 앞에는 There is가 아닌 There are를 써야 합니다."
+                }
+            ]
+        };
+
+        let gameState = JSON.parse(JSON.stringify(DEFAULT_STATE));
+        let myStudentTeamId = null;
+        let isTeacherAuthenticated = false;
+        let db = null;
+        let auth = null;
+        let docRef = null;
+
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'grammar-auction-app';
+        let firebaseConfig = null;
+        try {
+            if (typeof __firebase_config !== 'undefined' && __firebase_config) {
+                firebaseConfig = JSON.parse(__firebase_config);
+            }
+        } catch (e) {
+            console.warn("Firebase config fallback to local memory mode", e);
+        }
+
+        async function initSync() {
+            if (!firebaseConfig) {
+                updateUI();
+                return;
+            }
+
+            try {
+                const app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+                docRef = doc(db, 'artifacts', appId, 'public', 'data', 'grammar_auction', 'room_state');
+
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+
+                onSnapshot(docRef, (snapshot) => {
+                    if (snapshot.exists()) {
+                        gameState = snapshot.data();
+                        updateUI();
+                    } else {
+                        setDoc(docRef, gameState);
+                    }
+                }, (err) => console.error(err));
+
+            } catch (err) {
+                console.error("Firebase init error:", err);
+            }
+        }
+
+        async function syncState() {
+            updateUI();
+            if (docRef) {
+                try {
+                    await setDoc(docRef, gameState);
+                } catch (e) {
+                    console.error("Cloud sync error:", e);
+                }
+            }
+        }
+
+        // View Switching Logic
+        window.switchView = function(viewName) {
+            document.getElementById('view-main').classList.add('hidden');
+            document.getElementById('view-student').classList.add('hidden');
+            document.getElementById('view-teacher').classList.add('hidden');
+
+            document.getElementById('tab-btn-main').className = "px-3.5 py-1.5 rounded-lg text-xs font-jua transition flex items-center gap-1.5 text-indigo-100 hover:text-white";
+            document.getElementById('tab-btn-student').className = "px-3.5 py-1.5 rounded-lg text-xs font-jua transition flex items-center gap-1.5 text-indigo-100 hover:text-white";
+            document.getElementById('tab-btn-teacher').className = "px-3.5 py-1.5 rounded-lg text-xs font-jua transition flex items-center gap-1.5 text-indigo-100 hover:text-white";
+
+            if (viewName === 'main') {
+                document.getElementById('view-main').classList.remove('hidden');
+                document.getElementById('tab-btn-main').className = "px-3.5 py-1.5 rounded-lg text-xs font-jua transition flex items-center gap-1.5 bg-white text-indigo-950 font-bold shadow-sm";
+            } else if (viewName === 'student') {
+                document.getElementById('view-student').classList.remove('hidden');
+                document.getElementById('tab-btn-student').className = "px-3.5 py-1.5 rounded-lg text-xs font-jua transition flex items-center gap-1.5 bg-white text-indigo-950 font-bold shadow-sm";
+            } else if (viewName === 'teacher') {
+                document.getElementById('view-teacher').classList.remove('hidden');
+                document.getElementById('tab-btn-teacher').className = "px-3.5 py-1.5 rounded-lg text-xs font-jua transition flex items-center gap-1.5 bg-white text-indigo-950 font-bold shadow-sm";
+            }
+        };
+
+        window.openStudentQRModal = function() {
+            const url = window.location.href;
+            document.getElementById('student-url-display').innerText = url;
+            document.getElementById('qr-code-img').src = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(url)}`;
+            document.getElementById('modal-student-qr').classList.remove('hidden');
+        };
+
+        window.closeStudentQRModal = function() {
+            document.getElementById('modal-student-qr').classList.add('hidden');
+        };
+
+        window.copyStudentUrl = function() {
+            navigator.clipboard.writeText(window.location.href);
+            showToast("링크가 복사되었습니다!", "success");
+        };
+
+        window.openTeacherAuthModal = function() {
+            if (isTeacherAuthenticated) {
+                switchView('teacher');
+            } else {
+                document.getElementById('modal-teacher-auth').classList.remove('hidden');
+                document.getElementById('teacher-pwd-input').focus();
+            }
+        };
+
+        window.closeTeacherAuthModal = function() {
+            document.getElementById('modal-teacher-auth').classList.add('hidden');
+        };
+
+        window.verifyTeacherPassword = function() {
+            const pwd = document.getElementById('teacher-pwd-input').value.trim();
+            if (pwd === '202612') {
+                isTeacherAuthenticated = true;
+                closeTeacherAuthModal();
+                switchView('teacher');
+                showToast("교사 인증 완료!", "success");
+            } else {
+                showToast("비밀번호가 맞지 않습니다 (202612)", "error");
+            }
+        };
+
+        let selectedTeamForPin = null;
+
+        window.selectStudentTeam = function(teamId) {
+            selectedTeamForPin = teamId;
+            document.querySelectorAll('.team-sel-btn').forEach(btn => btn.classList.remove('border-indigo-500', 'bg-indigo-50'));
+            document.getElementById(`team-select-btn-${teamId}`).classList.add('border-indigo-500', 'bg-indigo-50');
+
+            const team = gameState.teams[teamId];
+            document.getElementById('selected-team-title').innerText = team.name;
+            document.getElementById('student-pin-form').classList.remove('hidden');
+            document.getElementById('student-pin-input').value = '';
+            document.getElementById('student-pin-input').focus();
+        };
+
+        window.loginStudentTeam = function() {
+            if (!selectedTeamForPin) return;
+            const pinInput = document.getElementById('student-pin-input').value.trim();
+            if (!pinInput || pinInput.length < 4) {
+                showToast("4자리 이상 비밀번호를 입력하세요.", "warning");
+                return;
+            }
+
+            const team = gameState.teams[selectedTeamForPin];
+            if (!team.pin) {
+                gameState.teams[selectedTeamForPin].pin = pinInput;
+                myStudentTeamId = selectedTeamForPin;
+                syncState();
+                showToast(`${team.name} 비밀번호 설정 완료!`, "success");
+            } else {
+                if (team.pin === pinInput) {
+                    myStudentTeamId = selectedTeamForPin;
+                    showToast(`${team.name}으로 접속했습니다!`, "success");
+                    updateUI();
+                } else {
+                    showToast("비밀번호가 일치하지 않습니다!", "error");
+                }
+            }
+        };
+
+        window.logoutStudentTeam = function() {
+            myStudentTeamId = null;
+            updateUI();
+        };
+
+        window.addBidOffset = function(amount) {
+            const currentBid = Number(document.getElementById('stu-bid-input').value) || gameState.highestBid || 0;
+            document.getElementById('stu-bid-input').value = currentBid + amount;
+        };
+
+        window.setBidToCurrentPlus = function(amount) {
+            document.getElementById('stu-bid-input').value = (gameState.highestBid || 0) + amount;
+        };
+
+        window.submitStudentBid = function() {
+            if (!myStudentTeamId) return;
+            if (gameState.status !== 'BIDDING') {
+                showToast("현재 입찰을 받지 않고 있습니다.", "warning");
+                return;
+            }
+
+            const team = gameState.teams[myStudentTeamId];
+            const bidVal = Number(document.getElementById('stu-bid-input').value);
+
+            if (isNaN(bidVal) || bidVal <= 0) {
+                showToast("올바른 입찰 금액을 입력하세요.", "warning");
+                return;
+            }
+
+            if (bidVal <= gameState.highestBid) {
+                showToast(`현재 최고가($${gameState.highestBid})보다 더 높은 금액이어야 합니다.`, "warning");
+                return;
+            }
+
+            if (bidVal > team.balance) {
+                showToast(`보유금액($${team.balance})을 초과해서 배팅할 수 없습니다.`, "error");
+                return;
+            }
+
+            gameState.highestBid = bidVal;
+            gameState.highestBidder = myStudentTeamId;
+            gameState.bidHistory.unshift({
+                teamId: myStudentTeamId,
+                teamName: team.name,
+                amount: bidVal,
+                time: new Date().toLocaleTimeString('ko-KR', { hour12: false, minute:'2-digit', second:'2-digit' })
+            });
+
+            syncState();
+            showToast(`$${bidVal} 입찰 제출 완료!`, "success");
+        };
+
+        window.submitSentenceCorrection = function() {
+            if (!myStudentTeamId) return;
+            const input = document.getElementById('stu-correction-input').value.trim();
+            if (!input) {
+                showToast("수정 문장을 입력해 주세요.", "warning");
+                return;
+            }
+
+            if (!gameState.correctionSubmissions) gameState.correctionSubmissions = {};
+            gameState.correctionSubmissions[myStudentTeamId] = {
+                teamName: gameState.teams[myStudentTeamId].name,
+                text: input,
+                time: new Date().toLocaleTimeString('ko-KR', { hour12: false, minute:'2-digit', second:'2-digit' })
+            };
+
+            syncState();
+            showToast("수정 정답이 제출되었습니다!", "success");
+        };
+
+        // Teacher Controls
+        window.teacherStartAuction = function() {
+            if (gameState.sentences.length === 0) {
+                showToast("등록된 문장이 없습니다.", "warning");
+                return;
+            }
+
+            const currSent = gameState.sentences[gameState.currentSentenceIndex];
+            gameState.currentSentence = currSent;
+            gameState.status = 'BIDDING';
+            gameState.highestBid = 0;
+            gameState.highestBidder = null;
+            gameState.bidHistory = [];
+            gameState.correctionSubmissions = {};
+            gameState.lastResultMsg = null;
+            gameState.showAnswerExplanation = false;
+            gameState.currentRound += 1;
+
+            syncState();
+            showToast("경매가 시작되었습니다!", "success");
+        };
+
+        window.teacherCloseBidding = function() {
+            if (gameState.status !== 'BIDDING') {
+                showToast("경매 진행 상태가 아닙니다.", "warning");
+                return;
+            }
+
+            if (!gameState.highestBidder) {
+                gameState.status = 'CLOSED';
+                gameState.lastResultMsg = "유찰되었습니다 (입찰 모둠 없음).";
+                gameState.showAnswerExplanation = true;
+                syncState();
+                showToast("유찰되었습니다.", "warning");
+                return;
+            }
+
+            gameState.status = 'CLOSED';
+            const winnerTeam = gameState.teams[gameState.highestBidder];
+            gameState.lastResultMsg = `🔨 ${winnerTeam.name}가 최고가 $${gameState.highestBid}에 낙찰받았습니다! '3. 정답 판정'을 진행하세요.`;
+
+            syncState();
+            confettiEffect();
+            showToast(`${winnerTeam.name} 최고가 낙찰!`, "success");
+        };
+
+        // Step 3: Sentence Judgment Step
+        window.teacherJudgeSentence = function() {
+            if (!gameState.currentSentence) return;
+            const sent = gameState.currentSentence;
+            const winnerId = gameState.highestBidder;
+
+            if (!winnerId) {
+                showToast("낙찰된 모둠이 없습니다.", "warning");
+                return;
+            }
+
+            const winnerTeam = gameState.teams[winnerId];
+
+            if (sent.isCorrect) {
+                // O (Correct Sentence): Winner automatically gets value minus bid
+                const oldBal = winnerTeam.balance;
+                const newBal = oldBal - gameState.highestBid + sent.value;
+                winnerTeam.balance = newBal;
+
+                gameState.lastResultMsg = `⭕ [올바른 문장!] ${winnerTeam.name}가 문장(가치 $${sent.value})을 얻었습니다! ($${oldBal} - $${gameState.highestBid} + $${sent.value} = $${newBal})`;
+                gameState.status = 'COMPLETED';
+                gameState.showAnswerExplanation = true; // Reveal answer & explanation
+                confettiEffect();
+                showToast(`${winnerTeam.name} 문장 가치 획득!`, "success");
+            } else {
+                // X (Incorrect Sentence): Ask if winning team succeeded in fixing the sentence
+                gameState.status = 'JUDGING_WINNER';
+                gameState.showAnswerExplanation = false; // Hide answer & explanation until decided!
+                gameState.lastResultMsg = `❌ [틀린 문장!] ${winnerTeam.name}가 올바르게 수정했는지 판정해주세요.`;
+            }
+
+            syncState();
+        };
+
+        // Decision A: Teacher judges whether winning team succeeded in fixing the sentence
+        window.teacherJudgeWinnerFix = function(isSuccess) {
+            if (!gameState.currentSentence || !gameState.highestBidder) return;
+            const sent = gameState.currentSentence;
+            const winnerId = gameState.highestBidder;
+            const winnerTeam = gameState.teams[winnerId];
+
+            if (isSuccess) {
+                // Winner Success: Balance = Balance - Bid + Sentence Value
+                const oldBal = winnerTeam.balance;
+                const newBal = oldBal - gameState.highestBid + sent.value;
+                winnerTeam.balance = newBal;
+
+                gameState.lastResultMsg = `🎉 [수정 성공!] ${winnerTeam.name}가 올바르게 고쳐서 $${sent.value} 가치를 획득했습니다! (잔액: $${newBal})`;
+                gameState.status = 'COMPLETED';
+                gameState.showAnswerExplanation = true; // Show answer & explanation!
+                confettiEffect();
+                showToast(`${winnerTeam.name} 수정 성공!`, "success");
+            } else {
+                // Winner Failed: Balance = Balance - Bid
+                winnerTeam.balance = winnerTeam.balance - gameState.highestBid;
+
+                // Move to Steal Chance for other teams
+                gameState.status = 'JUDGING_STEAL';
+                gameState.showAnswerExplanation = false; // STILL HIDE answer & explanation!
+                gameState.lastResultMsg = `💥 [수정 실패!] ${winnerTeam.name}가 배팅금 $${gameState.highestBid}를 잃었습니다. (잔액: $${winnerTeam.balance}) 🔥 어느 다른 모둠이 맞췄나요?`;
+                showToast(`${winnerTeam.name} 수정 실패. 다른 모둠 기회!`, "warning");
+            }
+
+            syncState();
+        };
+
+        // Decision B: Teacher judges which other team succeeded in stealing or if all failed
+        window.teacherJudgeSteal = function(stealerTeamId) {
+            if (!gameState.currentSentence) return;
+            const winnerId = gameState.highestBidder;
+            const winnerTeam = gameState.teams[winnerId];
+
+            if (stealerTeamId && stealerTeamId !== 0) {
+                // Another team succeeded: Gains +$50 bonus
+                const stealerTeam = gameState.teams[stealerTeamId];
+                stealerTeam.balance += 50;
+
+                gameState.lastResultMsg = `⚡ [스틸 성공!] ${stealerTeam.name}가 정답을 맞춰 보너스 +$50를 획득했습니다! (${winnerTeam ? winnerTeam.name : ''} 배팅금 -$${gameState.highestBid} 차감)`;
+                confettiEffect();
+                showToast(`${stealerTeam.name} 스틸 성공 (+$50)!`, "success");
+            } else {
+                // All teams failed: Only the winning bidder loses bid amount
+                gameState.lastResultMsg = `❌ [모두 못맞춤!] 아무 모둠도 고치지 못했습니다. (${winnerTeam ? winnerTeam.name : ''}만 배팅금 -$${gameState.highestBid} 상실)`;
+                showToast("모든 모둠 수정 실패", "info");
+            }
+
+            gameState.status = 'COMPLETED';
+            gameState.showAnswerExplanation = true; // FINALLY Reveal answer & explanation!
+            syncState();
+        };
+
+        window.teacherNextSentence = function() {
+            if (gameState.currentSentenceIndex + 1 >= gameState.sentences.length) {
+                showToast("마지막 문장입니다.", "info");
+                return;
+            }
+            gameState.currentSentenceIndex += 1;
+            gameState.currentSentence = gameState.sentences[gameState.currentSentenceIndex];
+            gameState.status = 'WAITING';
+            gameState.highestBid = 0;
+            gameState.highestBidder = null;
+            gameState.bidHistory = [];
+            gameState.correctionSubmissions = {};
+            gameState.lastResultMsg = null;
+            gameState.showAnswerExplanation = false;
+
+            syncState();
+            showToast("다음 문장으로 넘어갑니다.", "info");
+        };
+
+        window.addSentenceFromTeacher = function() {
+            const text = document.getElementById('t-sent-text').value.trim();
+            const isCorrect = document.getElementById('t-sent-correct').value === 'true';
+            const value = Number(document.getElementById('t-sent-value').value);
+            const answer = document.getElementById('t-sent-answer').value.trim();
+            const explain = document.getElementById('t-sent-explain').value.trim();
+
+            if (!text) {
+                showToast("문장을 입력해주세요.", "warning");
+                return;
+            }
+
+            gameState.sentences.push({
+                id: Date.now(),
+                text,
+                isCorrect,
+                value,
+                correctAnswer: answer || text,
+                explanation: explain || "해설 없음"
+            });
+
+            document.getElementById('t-sent-text').value = '';
+            document.getElementById('t-sent-answer').value = '';
+            document.getElementById('t-sent-explain').value = '';
+
+            syncState();
+            showToast("새 문장이 등록되었습니다!", "success");
+        };
+
+        window.deleteSentence = function(id) {
+            gameState.sentences = gameState.sentences.filter(s => String(s.id) !== String(id));
+            syncState();
+            showToast("문장이 삭제되었습니다.", "info");
+        };
+
+        window.openEditSentenceModal = function(id) {
+            const sent = gameState.sentences.find(s => String(s.id) === String(id));
+            if (!sent) return;
+
+            document.getElementById('edit-sent-id').value = sent.id;
+            document.getElementById('edit-sent-text').value = sent.text || '';
+            document.getElementById('edit-sent-correct').value = sent.isCorrect ? 'true' : 'false';
+            document.getElementById('edit-sent-value').value = sent.value || 300;
+            document.getElementById('edit-sent-answer').value = sent.correctAnswer || sent.text || '';
+            document.getElementById('edit-sent-explain').value = sent.explanation || '';
+
+            document.getElementById('modal-edit-sentence').classList.remove('hidden');
+            setTimeout(() => {
+                document.getElementById('edit-sent-text').focus();
+            }, 50);
+        };
+
+        window.closeEditSentenceModal = function() {
+            document.getElementById('modal-edit-sentence').classList.add('hidden');
+        };
+
+        window.saveEditedSentence = function() {
+            const id = document.getElementById('edit-sent-id').value;
+            const text = document.getElementById('edit-sent-text').value.trim();
+            const isCorrect = document.getElementById('edit-sent-correct').value === 'true';
+            const value = Number(document.getElementById('edit-sent-value').value) || 300;
+            const answer = document.getElementById('edit-sent-answer').value.trim();
+            const explain = document.getElementById('edit-sent-explain').value.trim();
+
+            if (!text) {
+                showToast("문장을 입력해주세요.", "warning");
+                return;
+            }
+
+            const index = gameState.sentences.findIndex(s => String(s.id) === String(id));
+            if (index !== -1) {
+                gameState.sentences[index] = {
+                    ...gameState.sentences[index],
+                    text,
+                    isCorrect,
+                    value,
+                    correctAnswer: answer || text,
+                    explanation: explain || "해설 없음"
+                };
+
+                if (gameState.currentSentence && String(gameState.currentSentence.id) === String(id)) {
+                    gameState.currentSentence = gameState.sentences[index];
+                }
+
+                syncState();
+                closeEditSentenceModal();
+                showToast("문장이 수정되었습니다!", "success");
+            } else {
+                showToast("해당 문장을 찾을 수 없습니다.", "error");
+            }
+        };
+
+        window.resetTeamPin = function(teamId) {
+            gameState.teams[teamId].pin = null;
+            syncState();
+            showToast(`${gameState.teams[teamId].name} 비밀번호 초기화.`, "info");
+        };
+
+        window.updateTeamBalance = function(teamId, amount) {
+            gameState.teams[teamId].balance += amount;
+            syncState();
+        };
+
+        window.resetGameData = function() {
+            gameState = JSON.parse(JSON.stringify(DEFAULT_STATE));
+            syncState();
+            showToast("게임 데이터가 초기화되었습니다.", "info");
+        };
+
+        window.loadSampleSentences = function() {
+            gameState.sentences = [
+                { id: 101, text: "He go to school by bus every day.", isCorrect: false, value: 300, correctAnswer: "He goes to school by bus every day.", explanation: "3인칭 단수 주어 뒤에는 goes 사용" },
+                { id: 102, text: "They are playing soccer now.", isCorrect: true, value: 500, correctAnswer: "They are playing soccer now.", explanation: "현재진행형 올바른 문장" },
+                { id: 103, text: "Do she like apples?", isCorrect: false, value: 300, correctAnswer: "Does she like apples?", explanation: "3인칭 단수 의문문에는 Does" },
+                { id: 104, text: "I bought a new book yesterday.", isCorrect: true, value: 400, correctAnswer: "I bought a new book yesterday.", explanation: "과거시제 동사 bought 사용" },
+                { id: 105, text: "There is two cats on the sofa.", isCorrect: false, value: 500, correctAnswer: "There are two cats on the sofa.", explanation: "복수 명사 앞에는 are 사용" }
+            ];
+            gameState.currentSentenceIndex = 0;
+            gameState.currentSentence = gameState.sentences[0];
+            syncState();
+            showToast("샘플 문장 5개가 등록되었습니다.", "success");
+        };
+
+        window.handleJsonFileUpload = function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                try {
+                    const parsed = JSON.parse(evt.target.result);
+                    const list = Array.isArray(parsed) ? parsed : (parsed.sentences || parsed.data || []);
+                    if (list.length === 0) {
+                        showToast("JSON에 문장이 없습니다.", "warning");
+                        return;
+                    }
+                    gameState.sentences = list.map((s, idx) => {
+                        let isCorr = true;
+                        if (typeof s.isCorrect === 'boolean') {
+                            isCorr = s.isCorrect;
+                        } else if (typeof s.correct === 'boolean') {
+                            isCorr = s.correct;
+                        } else {
+                            const val = String(s.isCorrect ?? s.correct ?? s.is_correct ?? 'true').trim().toLowerCase();
+                            isCorr = (val === 'true' || val === 'o' || val === '1' || val === 'right' || val === 'correct');
+                        }
+
+                        return {
+                            id: s.id ? String(s.id) : `json_${Date.now()}_${idx}_${Math.random().toString(36).substring(2, 7)}`,
+                            text: s.text || s.sentence || "내용 없음",
+                            isCorrect: isCorr,
+                            value: Number(s.value) || 300,
+                            correctAnswer: s.correctAnswer || s.answer || s.text || s.sentence || "",
+                            explanation: s.explanation || s.explain || "해설 없음"
+                        };
+                    });
+                    gameState.currentSentenceIndex = 0;
+                    gameState.currentSentence = gameState.sentences[0];
+                    syncState();
+                    showToast(`JSON 문장 ${gameState.sentences.length}개 로드 성공!`, "success");
+                } catch (err) {
+                    showToast("JSON 읽기 실패 (형식을 확인해주세요)", "error");
+                }
+            };
+            reader.readAsText(file);
+        };
+
+        function updateUI() {
+            // Main Screen Update
+            document.getElementById('disp-current-round').innerText = gameState.currentRound || 1;
+            const currSent = gameState.currentSentence || gameState.sentences[gameState.currentSentenceIndex];
+
+            if (currSent) {
+                document.getElementById('disp-sentence-text').innerText = `"${currSent.text}"`;
+                // Show Value ONLY after auction is completed
+                if (gameState.status === 'COMPLETED') {
+                    document.getElementById('disp-sentence-value').innerText = `$${currSent.value}`;
+                } else {
+                    document.getElementById('disp-sentence-value').innerText = "🔒 $??? (미공개)";
+                }
+            } else {
+                document.getElementById('disp-sentence-text').innerText = "등록된 문장이 없습니다.";
+            }
+
+            // Auction Status Badge
+            const statusBadge = document.getElementById('disp-auction-status-badge');
+            if (gameState.status === 'BIDDING') {
+                statusBadge.className = "px-3 py-1 rounded-lg text-xs font-jua font-bold bg-amber-400 text-indigo-950 shadow-sm animate-pulse";
+                statusBadge.innerText = "🔥 입찰 진행 중!";
+            } else if (gameState.status === 'CLOSED') {
+                statusBadge.className = "px-3 py-1 rounded-lg text-xs font-jua font-bold bg-emerald-600 text-white shadow-sm";
+                statusBadge.innerText = "🔨 최고가 낙찰 완료";
+            } else if (gameState.status === 'JUDGING_WINNER') {
+                statusBadge.className = "px-3 py-1 rounded-lg text-xs font-jua font-bold bg-purple-600 text-white shadow-sm animate-pulse";
+                statusBadge.innerText = "✏️ 낙찰 모둠 수정 성공여부 판정 중";
+            } else if (gameState.status === 'JUDGING_STEAL') {
+                statusBadge.className = "px-3 py-1 rounded-lg text-xs font-jua font-bold bg-rose-600 text-white shadow-sm animate-bounce";
+                statusBadge.innerText = "⚡ 다른 모둠 스틸 찬스 판정 중!";
+            } else if (gameState.status === 'COMPLETED') {
+                statusBadge.className = "px-3 py-1 rounded-lg text-xs font-jua font-bold bg-slate-700 text-white shadow-sm";
+                statusBadge.innerText = "✅ 라운드 종료 & 정산 완료";
+            } else {
+                statusBadge.className = "px-3 py-1 rounded-lg text-xs font-jua font-bold bg-slate-200 text-slate-700";
+                statusBadge.innerText = "대기 중";
+            }
+
+            // Highlight Main Control Buttons depending on Game State
+            const btnStart = document.getElementById('main-ctrl-start');
+            const btnClose = document.getElementById('main-ctrl-close');
+            const btnJudge = document.getElementById('main-ctrl-judge');
+            const btnNext = document.getElementById('main-ctrl-next');
+
+            if (btnStart && btnClose && btnJudge && btnNext) {
+                [btnStart, btnClose, btnJudge, btnNext].forEach(b => {
+                    b.classList.remove('ring-4', 'ring-amber-300', 'ring-emerald-300', 'ring-purple-300', 'scale-105');
+                    b.style.opacity = '0.65';
+                });
+
+                if (gameState.status === 'WAITING') {
+                    btnStart.style.opacity = '1';
+                    btnStart.classList.add('ring-4', 'ring-emerald-300', 'scale-105');
+                } else if (gameState.status === 'BIDDING') {
+                    btnClose.style.opacity = '1';
+                    btnClose.classList.add('ring-4', 'ring-amber-300', 'scale-105');
+                } else if (['CLOSED', 'JUDGING_WINNER', 'JUDGING_STEAL'].includes(gameState.status)) {
+                    btnJudge.style.opacity = '1';
+                    btnJudge.classList.add('ring-4', 'ring-purple-300', 'scale-105');
+                } else if (gameState.status === 'COMPLETED') {
+                    btnNext.style.opacity = '1';
+                    btnNext.classList.add('ring-4', 'ring-amber-300', 'scale-105');
+                }
+            }
+
+            // Highest Bid
+            document.getElementById('disp-high-bid-amount').innerText = `$${gameState.highestBid}`;
+            document.getElementById('disp-high-bidder').innerText = gameState.highestBidder ? gameState.teams[gameState.highestBidder].name : "없음";
+
+            // Bid Log List
+            const historyBox = document.getElementById('disp-bid-history');
+            if (gameState.bidHistory && gameState.bidHistory.length > 0) {
+                historyBox.innerHTML = gameState.bidHistory.map(b => `
+                    <div class="flex justify-between items-center bg-slate-50 px-3 py-2 rounded-xl border border-slate-200">
+                        <span class="font-jua text-indigo-950 text-base">${b.teamName}</span>
+                        <span class="font-mono text-xs text-slate-400">${b.time}</span>
+                        <span class="font-bold text-emerald-600 font-jua text-base">$${b.amount}</span>
+                    </div>
+                `).join('');
+            } else {
+                historyBox.innerHTML = `<div class="text-center text-slate-400 py-8 text-xs font-semibold">입찰 기록이 없습니다.</div>`;
+            }
+
+            // Interactive Judgment Action Box for Teacher
+            const judgeActionPanel = document.getElementById('disp-judge-action-panel');
+            const judgeTitle = document.getElementById('disp-judge-title');
+            const judgeBtns = document.getElementById('disp-judge-buttons');
+
+            if (gameState.status === 'JUDGING_WINNER') {
+                const winnerName = gameState.highestBidder ? gameState.teams[gameState.highestBidder].name : "낙찰 모둠";
+                judgeActionPanel.classList.remove('hidden');
+                judgeTitle.innerText = `🤔 [${winnerName}] 문장 수정에 성공했나요?`;
+                judgeBtns.innerHTML = `
+                    <button onclick="teacherJudgeWinnerFix(true)" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-jua text-sm font-bold rounded-xl shadow transition pop-btn">
+                        ⭕ ${winnerName} 수정 성공!
+                    </button>
+                    <button onclick="teacherJudgeWinnerFix(false)" class="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white font-jua text-sm font-bold rounded-xl shadow transition pop-btn">
+                        ❌ ${winnerName} 수정 실패
+                    </button>
+                `;
+            } else if (gameState.status === 'JUDGING_STEAL') {
+                judgeActionPanel.classList.remove('hidden');
+                judgeTitle.innerText = `🔥 다른 모둠 스틸 찬스! 어느 모둠이 맞췄나요?`;
+                
+                const winnerId = gameState.highestBidder;
+                let otherBtnsHTML = '';
+                for (let i = 1; i <= 4; i++) {
+                    if (i == winnerId) continue;
+                    otherBtnsHTML += `
+                        <button onclick="teacherJudgeSteal(${i})" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white font-jua text-xs font-bold rounded-xl shadow transition pop-btn">
+                            ✨ ${i}모둠 정답 (+50)
+                        </button>
+                    `;
+                }
+                otherBtnsHTML += `
+                    <button onclick="teacherJudgeSteal(0)" class="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-white font-jua text-xs font-bold rounded-xl shadow transition pop-btn">
+                        💀 모두 못맞춤
+                    </button>
+                `;
+                judgeBtns.innerHTML = otherBtnsHTML;
+            } else {
+                judgeActionPanel.classList.add('hidden');
+            }
+
+            // Answer & Result Panel (Shown ONLY when showAnswerExplanation is true)
+            const resultPanel = document.getElementById('disp-result-panel');
+            if (gameState.lastResultMsg && gameState.showAnswerExplanation) {
+                resultPanel.classList.remove('hidden');
+                document.getElementById('disp-result-correctness').innerText = gameState.lastResultMsg;
+                document.getElementById('disp-result-answer').innerText = currSent ? `[문장 정답]: ${currSent.correctAnswer} (${currSent.explanation})` : '';
+            } else if (gameState.lastResultMsg && !gameState.showAnswerExplanation) {
+                resultPanel.classList.remove('hidden');
+                document.getElementById('disp-result-correctness').innerText = gameState.lastResultMsg;
+                document.getElementById('disp-result-answer').innerText = "🔒 정답 및 해설은 수정 판정 완료 후 공개됩니다!";
+            } else {
+                resultPanel.classList.add('hidden');
+            }
+
+            // Leaderboard Grid (Sorted by Balance)
+            const teamsGrid = document.getElementById('disp-teams-grid');
+            const sortedTeams = Object.entries(gameState.teams).sort((a, b) => b[1].balance - a[1].balance);
+
+            teamsGrid.innerHTML = sortedTeams.map(([id, t], index) => {
+                const isWinner = gameState.highestBidder == id;
+                return `
+                    <div class="bg-white border-2 ${isWinner ? 'border-amber-400 ring-2 ring-amber-200' : 'border-slate-200'} rounded-3xl p-5 flex flex-col justify-between shadow-sm">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-xs font-jua px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
+                                순위 #${index + 1}
+                            </span>
+                            ${isWinner ? '<span class="text-[11px] bg-amber-400 text-indigo-950 font-jua px-2 py-0.5 rounded-full font-bold">👑 최고 낙찰</span>' : ''}
+                        </div>
+                        <div class="text-center my-3">
+                            <div class="font-jua text-2xl text-slate-800">${t.name}</div>
+                            <div class="text-3xl font-jua text-indigo-600 mt-1">$${t.balance.toLocaleString()}</div>
+                        </div>
+                        <div class="text-[11px] text-center font-bold text-slate-400 border-t border-slate-100 pt-2">
+                            비밀번호: ${t.pin ? '🔒 설정됨' : '🔓 미설정'}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+
+            // Student View Updates
+            for (let i = 1; i <= 4; i++) {
+                const tag = document.getElementById(`team-status-tag-${i}`);
+                if (tag) {
+                    tag.innerText = gameState.teams[i].pin ? '🔒 비밀번호 설정됨' : '🔓 비밀번호 미설정';
+                }
+            }
+
+            if (myStudentTeamId) {
+                document.getElementById('student-auth-container').classList.add('hidden');
+                document.getElementById('student-active-panel').classList.remove('hidden');
+
+                const myTeam = gameState.teams[myStudentTeamId];
+                document.getElementById('stu-my-team-badge').innerText = myStudentTeamId;
+                document.getElementById('stu-my-team-name').innerText = `${myTeam.name} 접속 중`;
+                document.getElementById('stu-my-balance').innerText = `$${myTeam.balance.toLocaleString()}`;
+
+                if (currSent) {
+                    document.getElementById('stu-sentence-text').innerText = `"${currSent.text}"`;
+                }
+
+                // Show correction box if Winner correcting OR Steal Chance for other teams
+                const correctionBox = document.getElementById('stu-correction-box');
+                const title = document.getElementById('stu-correction-title');
+                const desc = document.getElementById('stu-correction-desc');
+
+                if (gameState.status === 'JUDGING_WINNER' && gameState.highestBidder == myStudentTeamId) {
+                    correctionBox.classList.remove('hidden');
+                    title.innerText = "낙찰 문장 고치기 기회!";
+                    desc.innerText = "낙찰받은 문장이 틀렸습니다! 올바르게 고쳐서 선생님께 말씀드리거나 아래에 제출하세요.";
+                } else if (gameState.status === 'JUDGING_STEAL' && gameState.highestBidder != myStudentTeamId) {
+                    correctionBox.classList.remove('hidden');
+                    title.innerText = "⚡ 다른 모둠 찬스(스틸 기회)!";
+                    desc.innerText = "낙찰받은 모둠이 수정을 실패했습니다! 먼저 올바르게 고쳐서 손을 들거나 제출하면 보너스 +$50를 획득합니다!";
+                } else {
+                    correctionBox.classList.add('hidden');
+                }
+
+            } else {
+                document.getElementById('student-auth-container').classList.remove('hidden');
+                document.getElementById('student-active-panel').classList.add('hidden');
+            }
+
+
+            // Teacher Dashboard Updates
+            document.getElementById('t-sentence-count').innerText = gameState.sentences.length;
+            const tSentList = document.getElementById('t-sentence-list');
+            
+            tSentList.innerHTML = gameState.sentences.map((s, idx) => `
+                <div class="p-3 bg-white border-2 ${idx === gameState.currentSentenceIndex ? 'border-indigo-500 shadow-sm' : 'border-slate-200'} rounded-2xl flex items-center justify-between gap-3 text-xs">
+                    <div class="flex-1">
+                        <div class="flex items-center gap-2">
+                            <span class="font-jua text-indigo-600 text-sm">#${idx + 1}</span>
+                            <span class="text-slate-800 font-bold text-sm">"${s.text}"</span>
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${s.isCorrect ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}">
+                                ${s.isCorrect ? 'O (정문)' : 'X (비문)'}
+                            </span>
+                        </div>
+                        <div class="text-slate-500 mt-1 font-medium">
+                            가치: <strong class="text-amber-600">$${s.value}</strong> | 정답: <span class="font-mono text-slate-700">${s.correctAnswer}</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <button onclick="openEditSentenceModal('${s.id}')" class="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold rounded-lg border border-indigo-200 transition pop-btn">
+                            수정
+                        </button>
+                        <button onclick="deleteSentence('${s.id}')" class="px-2.5 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold rounded-lg border border-rose-200 transition pop-btn">
+                            삭제
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+
+            // Teacher Teams Manage
+            const tTeamsGrid = document.getElementById('t-teams-manage-grid');
+            tTeamsGrid.innerHTML = Object.entries(gameState.teams).map(([id, t]) => `
+                <div class="p-3 bg-slate-50 border border-slate-200 rounded-2xl space-y-2 text-xs">
+                    <div class="flex justify-between items-center">
+                        <span class="font-jua text-slate-800 text-sm">${t.name}</span>
+                        <span class="font-bold text-indigo-600 font-jua text-sm">$${t.balance}</span>
+                    </div>
+                    <div class="flex gap-1">
+                        <button onclick="updateTeamBalance(${id}, 100)" class="flex-1 py-1 bg-white hover:bg-slate-100 font-bold text-slate-700 rounded-lg border border-slate-200">+100</button>
+                        <button onclick="updateTeamBalance(${id}, -100)" class="flex-1 py-1 bg-white hover:bg-slate-100 font-bold text-slate-700 rounded-lg border border-slate-200">-100</button>
+                    </div>
+                    <button onclick="resetTeamPin(${id})" class="w-full py-1 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-lg">
+                        PIN 초기화 (${t.pin ? t.pin : '미설정'})
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function showToast(msg, type = "info") {
+            const toast = document.createElement('div');
+            const bg = type === 'success' ? 'bg-emerald-600' : type === 'error' ? 'bg-rose-600' : type === 'warning' ? 'bg-amber-500' : 'bg-indigo-600';
+            toast.className = `${bg} text-white text-xs font-bold px-4 py-3 rounded-2xl shadow-lg transition-all duration-300 transform translate-y-2 opacity-0 flex items-center gap-2`;
+            toast.innerHTML = `<i class="fa-solid fa-circle-info"></i> ${msg}`;
+
+            const container = document.getElementById('toast-container');
+            container.appendChild(toast);
+
+            setTimeout(() => toast.classList.remove('translate-y-2', 'opacity-0'), 10);
+            setTimeout(() => {
+                toast.classList.add('opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        function confettiEffect() {
+            if (window.confetti) {
+                confetti({
+                    particleCount: 80,
+                    spread: 70,
+                    origin: { y: 0.6 }
+                });
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            initSync();
+            updateUI();
+        });
+    </script>
+</body>
+</html>
