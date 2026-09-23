@@ -627,44 +627,140 @@
             sentences: [
                 {
                     id: 1,
-                    text: "She go to school by bus every day.",
-                    isCorrect: false,
-                    value: 300,
-                    correctAnswer: "She goes to school by bus every day.",
-                    explanation: "3인칭 단수 주어(She) 뒤의 동사 go는 goes로 고쳐야 합니다."
+                    text: "I want to play soccer with my friends after school.\n나는 방과 후에 친구들과 축구하는 것을 원한다",
+                    isCorrect: true,
+                    value: 600,
+                    correctAnswer: "I want to play soccer with my friends after school.",
+                    explanation: "want 동사의 목적어로 to부정사가 올바르게 쓰임."
                 },
                 {
                     id: 2,
-                    text: "They are playing soccer in the park now.",
+                    text: "To study English every day is important for students.\n매일 영어를 공부하는 것은 학생들에게 중요하다.",
                     isCorrect: true,
-                    value: 500,
+                    value: 1000,
                     correctAnswer: "They are playing soccer in the park now.",
-                    explanation: "현재진행형(be + v-ing)으로 문법적으로 올바른 문장입니다!"
+                    explanation: "to부정사가 주어로 쓰이면 단수 취급하므로 단수 동사 is가 와야 한다."
                 },
                 {
                     id: 3,
-                    text: "He doesn't likes watching scary movies.",
+                    text: "She planned to going to the theme park.\n그녀는 테마파크에 가기로 계획했다.",
                     isCorrect: false,
-                    value: 300,
-                    correctAnswer: "He doesn't like watching scary movies.",
-                    explanation: "조동사 doesn't 뒤에는 동사원형(like)을 사용해야 합니다."
+                    value: 100,
+                    correctAnswer: "She planned to go to the theme park.",
+                    explanation: "plan 뒤에는 to+동사원형(to go)이 와야 합니다!"
                 },
                 {
                     id: 4,
-                    text: "I met my best friend yesterday.",
-                    isCorrect: true,
-                    value: 400,
-                    correctAnswer: "I met my best friend yesterday.",
-                    explanation: "과거 신호어(yesterday)와 과거동사(met)가 올바르게 사용되었습니다."
+                    text: "I know that he reading books.\n나는 그가 책 읽는 것을 좋아하는 것을 안다.",
+                    isCorrect: false,
+                    value: 300,
+                    correctAnswer: "I know that he likes reading books.",
+                    explanation: "접속사 that 뒤에는 주어 동사가 있는 절이 와야 하는데 해당 문제는 동사가 없다. 해석에 따라 올바른 동사는 likes가 들어가야 한다."
                 },
                 {
                     id: 5,
-                    text: "There is many books on the table.",
-                    isCorrect: false,
+                    text: "I think that English is difficult but fun!\n나는 영어가 어렵지만 재밌다고 생각한다.",
+                    isCorrect: true,
                     value: 500,
-                    correctAnswer: "There are many books on the table.",
-                    explanation: "복수 명사(books) 앞에는 There is가 아닌 There are를 써야 합니다."
+                    correctAnswer: "I think that English is difficult but fun!",
+                    explanation: "접속사 that은 뒤에 주어 동사가 있는 절이 와야 하며 that절은 동사의 목적어 역할을 한다."
                 }
+                {
+                    id: 6,
+                    text: "She wants play the piano.\n그녀는 피아노 치기를 원한다.",
+                    isCorrect: false,
+                    value: 200,
+                    correctAnswer: "She wants to play the piano.",
+                    explanation: "want 동사의 목적어로 to부정사가 와야 한다."
+                }
+                {
+                    id: 7,
+                    text: "His job is to drive buses.\n그의 직업은 버스 운전하는 것이다.",
+                    isCorrect: true,
+                    value: 450,
+                    correctAnswer: "She wants to play the piano.",
+                    explanation: "to부정사가 보어로 쓰인 것이다."
+                } 
+                {
+                    id: 8,
+                    text: "He thinks the plan is very good.\n그는 그 계획이 매우 좋다고 생각한다.",
+                    isCorrect: true,
+                    value: 520,
+                    correctAnswer: "He thinks the plan is very good.",
+                    explanation: "동사의 목적어로 쓰인 that절에서 that은 생략 가능하다."
+                }         
+                {
+                    id: 9,
+                    text: "Did you hear that the team won the game?\n그 팀이 게임을 이겼다는 것을 들었었니?",
+                    isCorrect: true,
+                    value: 450,
+                    correctAnswer: "Did you hear that the team won the game?",
+                    explanation: "that절이 hear의 목적어로 적절하게 쓰였다"
+                }
+                {
+                    id: 10,
+                    text: "We believe that we can meet soon.\n우리는 우리가 곧 만날 수 있다고 믿는다.",
+                    isCorrect: true,
+                    value: 350,
+                    correctAnswer: "We believe that we can meet soon.",
+                    explanation: "that절이 believe의 목적어로 적절하게 쓰였다."
+                } 
+                {
+                    id: 11,
+                    text: "He decided staying home.\n그는 집에 남아있기로 결심했다.",
+                    isCorrect: false,
+                    value: 250,
+                    correctAnswer: "He decided to stay home.",
+                    explanation: "decide 뒤에는 동명사가 아닌 to부정사가 와야 한다."
+                }
+                {
+                    id: 12,
+                    text: "You know that today is Mia's birthday.\n너는 오늘이 미아의 생일인 것을 안다.",
+                    isCorrect: true,
+                    value: 450,
+                    correctAnswer: "You know that today is Mia's birthday.",
+                    explanation: "that절이 동사 know의 목적어로 적절하게 쓰였다."
+                }
+                {
+                    id: 13,
+                    text: "His hope is to having a pet.\n그의 희망은 애완동물을 가지는 것이다.",
+                    isCorrect: false,
+                    value: 200,
+                    correctAnswer: "His hope is to have a pet.",
+                    explanation: "보어 자리에 올 수 있는 것은 명사이다. have a pet을 명사로 만들기 위해서 to부정사를 활용했다."
+                } 
+                {
+                    id: 14,
+                    text: "To be kind to your friends are important.\n친구들에게 친절한 것은 중요하다.",
+                    isCorrect: false,
+                    value: 300,
+                    correctAnswer: "To be kind to your friends is important.",
+                    explanation: "to부정사가 문장의 주어로 쓰일 때는 단수 취급을 하기 때문에 be동사 is가 와야 한다."
+                } 
+                {
+                    id: 15,
+                    text: "I said that he a headache.\n나는 그가 두통이 있다고 말했다.",
+                    isCorrect: false,
+                    value: 250,
+                    correctAnswer: "I hope to visit New York next year.",
+                    explanation: "hope뒤에는 to부정사가 와야 한다."
+                } 
+                {
+                    id: 16,
+                    text: "I hope to visit New York next year.\n나는 내년에 뉴욕 방문하기를 희망한다.",
+                    isCorrect: true,
+                    value: 1500,
+                    correctAnswer: "I hope to visit New York next year.",
+                    explanation: "hope뒤에는 to부정사가 와야 한다."
+                } 
+                {
+                    id: 17,
+                    text: "She doesn't think that we will eat spaghetti for lunch.\n그녀는 우리가 스파게티를 먹지 않을 것이라고 생각한다.",
+                    isCorrect: true,
+                    value: 1000,
+                    correctAnswer: "She doesn't think that we will eat spaghetti for lunch.",
+                    explanation: "think의 목적어로 that절이 올바르게 왔다."
+                }         
             ]
         };
 
